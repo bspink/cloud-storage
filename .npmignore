@@ -1,0 +1,6 @@
+example
+node_modules
+.eslintrc
+.gitignore
+.nyc_output
+test
