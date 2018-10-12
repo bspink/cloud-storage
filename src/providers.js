@@ -2,30 +2,40 @@
 const azureStorage = require('azure-storage');
 const { Storage } = require('@google-cloud/storage');
 const AWS = require('aws-sdk');
+const { readFileSync } = require('fs');
 
 const { NotYetImplementedError } = require('./errors');
 
 class GoogleCloudStorage {
   constructor(projectId, bucket, credentials) {
-    this.projectId = projectId;
-    this.bucket = bucket;
-    this.credentials = credentials;
+    const storage = new Storage({ 
+      projectId,
+      credentials: JSON.parse(readFileSync(credentials, 'utf8')), 
+    });
+
+    this.bucket = storage.bucket(bucket);
   }
 
   read(path) {
-    throw new NotYetImplementedError();
+    return this.bucket.file(path).download()
+      .then(([file]) => file.toString('utf8'));
   }
 
   write(path, content) {
-    throw new NotYetImplementedError();
+    return this.bucket.file(path).save(content);
   }
 
   writeStream(path, stream) {
-    throw new NotYetImplementedError();
+    return new Promise((resolve, reject) => {
+      stream
+        .pipe(this.bucket.file(path).createWriteStream())
+        .on('error', err => reject(err))
+        .on('finish', () => resolve());
+    });
   }
 
   readStream(path) {
-    throw new NotYetImplementedError();
+    return Promise.resolve(this.bucket.file(path).createReadStream());
   }
 }
 
@@ -66,9 +76,7 @@ class AWSS3 {
   }
 
   readStream(path) {
-    return new Promise((resolve) => {
-      resolve(this.s3.getObject({ Key: path }).createReadStream());
-    });
+    return new Promise.resolve(this.s3.getObject({ Key: path }).createReadStream());
   }
 }
 
