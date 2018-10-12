@@ -24,11 +24,12 @@ class CloudStorage {
   }
 
   readJSON(path) {
-    return JSON.parse(this.read(path));
+    return this.read(path)
+      .then(data => JSON.parse(data));
   }
 
   writeJSON(path, json) {
-    return this.write(path, JSON.stringify(json, null, 2)); 
+    return this.write(path, JSON.stringify(json, null, 2));
   }
 }
 

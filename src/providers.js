@@ -29,7 +29,6 @@ class GoogleCloudStorage {
   }
 }
 
-/* eslint-disable */
 class AWSS3 {
   constructor(bucket, accessKeyId, secretAccessKey) {
     this.s3 = new AWS.S3({
@@ -43,7 +42,7 @@ class AWSS3 {
     return new Promise((resolve, reject) => {
       this.s3.getObject({ Key: path }, (err, data) => {
         if (err) return reject(err);
-        return resolve(data.Body);
+        return resolve(data.Body.toString('utf8'));
       });
     });
   }
@@ -58,14 +57,20 @@ class AWSS3 {
   }
 
   writeStream(path, stream) {
-    throw new NotYetImplementedError();
+    return new Promise((resolve, reject) => {
+      this.s3.upload({ Body: stream, Key: path }).send((err) => {
+        if (err) return reject(err);
+        return resolve();
+      });
+    });
   }
 
   readStream(path) {
-    throw new NotYetImplementedError();
+    return new Promise((resolve) => {
+      resolve(this.s3.getObject({ Key: path }).createReadStream());
+    });
   }
 }
-/* eslint-enable */
 
 class AzureStorage {
   constructor(container, accountName, accountKey) {
