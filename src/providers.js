@@ -1,6 +1,7 @@
 const azureStorage = require('azure-storage');
 const { Storage } = require('@google-cloud/storage');
 const AWS = require('aws-sdk');
+const { https } = require('follow-redirects');
 const { readFileSync } = require('fs');
 
 class GoogleCloudStorage {
@@ -11,6 +12,18 @@ class GoogleCloudStorage {
     });
 
     this.bucket = storage.bucket(bucket);
+  }
+
+  uploadFromUrl(url, path) {
+    const fileStream = this.bucket.file(path).createWriteStream();
+
+    return new Promise((resolve, reject) => {
+      https.get(url, (response) => {
+        response.pipe(fileStream);
+        fileStream.on('finish', () => resolve());
+      })
+        .on('error', err => reject(err));
+    });
   }
 
   read(path) {
@@ -42,6 +55,19 @@ class AWSS3 {
       accessKeyId,
       secretAccessKey,
       params: { Bucket: bucket },
+    });
+  }
+
+  uploadFromUrl(url, path) {
+    return new Promise((resolve, reject) => {
+      https.get(url, (response) => {
+        this.s3.upload({ Key: path, Body: response })
+          .send((err) => {
+            if (err) return reject(err);
+            return resolve();
+          });
+      })
+        .on('error', err => reject(err));
     });
   }
 
@@ -84,6 +110,18 @@ class AzureStorage {
       : azureStorage.createBlobService();
 
     this.container = container;
+  }
+
+  uploadFromUrl(url, path) {
+    const blobStream = this.blobService.createWriteStreamToBlockBlob(this.container, path);
+
+    return new Promise((resolve, reject) => {
+      https.get(url, (response) => {
+        response.pipe(blobStream);
+        blobStream.on('finish', () => resolve());
+      })
+        .on('error', err => reject(err));
+    });
   }
 
   read(path) {
