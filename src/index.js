@@ -7,6 +7,10 @@ class CloudStorage {
     this.provider = provider;
   }
 
+  uploadFromUrl(url, path) {
+    return this.provider.uploadFromUrl(url, path);
+  }
+
   read(path) {
     return this.provider.read(path);
   }
